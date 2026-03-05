@@ -3,6 +3,7 @@
 #include <netinet/in.h> //sockaddr_in and sockaddr_in6
 #include <iostream> // print
 #include <arpa/inet.h> //internet networkto to presentation
+#include <unistd.h> //standard functions for unix like systems
 
 int main() {
 
@@ -21,19 +22,16 @@ int main() {
 
     for (struct addrinfo* ptr = res; ptr != nullptr; ptr = ptr->ai_next) {
 
-        char ip[INET6_ADDRSTRLEN];
-        void* addr;
+       int socketfd = socket(ptr->ai_family, ptr->ai_socktype, ptr->ai_protocol); //creates the socket endpoint with requirements given by addrinfo of domain
 
-        if (ptr->ai_family == AF_INET){
-            addr = &((struct sockaddr_in*)ptr->ai_addr)->sin_addr;
-        }
-        else {
-            addr = &((struct sockaddr_in6*)ptr->ai_addr)->sin6_addr;
-        }
+       if (connect(socketfd, ptr->ai_addr, ptr->ai_addrlen) == 0) {
+            std::cout << "success";
+            close(socketfd);
+            break; //successful connection that can be used
+       }
+       std::cout << "fail";
+       close(socketfd); //didn't work so close
 
-        inet_ntop(ptr->ai_family, addr, ip, sizeof(ip));
-
-        std::cout << "IP: " << ip << "\n";
 
     }
 }   
