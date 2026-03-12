@@ -17,6 +17,12 @@ int main() {
     //pointer to results
     struct addrinfo* res;
 
+    const char* request = 
+        "GET / HTTP/1.1\r\n"
+        "Host: fbref.com\r\n"
+        "Connection: close\r\n"
+        "\r\n";
+
     //function call to resolve hostname and set res to potential addresses
     getaddrinfo(hostname, "80", &hints, &res); //uses port 80 because that is used for HTTP
 
@@ -24,13 +30,24 @@ int main() {
 
        int socketfd = socket(ptr->ai_family, ptr->ai_socktype, ptr->ai_protocol); //creates the socket endpoint with requirements given by addrinfo of domain
 
+       char buffer[1024]; 
        if (connect(socketfd, ptr->ai_addr, ptr->ai_addrlen) == 0) {
-            std::cout << "success";
+            std::cout << "connection success" << std::endl;
+
+            ssize_t sendbytes = send(socketfd, request, strlen(request), 0);
+            
+            ssize_t recvbytes;
+
+            while ((recvbytes = recv(socketfd, buffer, sizeof(buffer), 0)) > 0) {
+                std::cout.write(buffer, recvbytes);
+            }
+            if (recvbytes == -1) perror("recv failed");
+        
             close(socketfd);
             break; //successful connection that can be used
        }
        std::cout << "fail";
-       close(socketfd); //didn't work so close
+       close(socketfd); //didn't work so close 
 
 
     }
