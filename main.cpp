@@ -1,54 +1,24 @@
-#include <sys/socket.h> //socket functions and constants
-#include <netdb.h> // addrinfo 
-#include <netinet/in.h> //sockaddr_in and sockaddr_in6
-#include <iostream> // print
-#include <arpa/inet.h> //internet networkto to presentation
-#include <unistd.h> //standard functions for unix like systems
+#include "utils.h"
+#include <string>
+#include <iostream>
 
 int main() {
+    std::string hostname;
+    char* result;
 
-    const char* hostname = "fbref.com";
+    std::cout << "Enter a hostname: " << std::endl;
+    std::cin >> hostname;
 
-    //initialize input filter; brackets ensure no garbage values, intialize with 0s. 
-    struct addrinfo hints{};
-    hints.ai_family = AF_UNSPEC; //either ipv4 or ipv6
-    hints.ai_socktype = SOCK_STREAM; //tcp socket type (not udp)
+    const char* host_cstr = hostname.c_str();
 
-    //pointer to results
-    struct addrinfo* res;
+    int status = get_root(host_cstr, &result);
 
-    const char* request = 
-        "GET / HTTP/1.1\r\n"
-        "Host: fbref.com\r\n"
-        "Connection: close\r\n"
-        "\r\n";
-
-    //function call to resolve hostname and set res to potential addresses
-    getaddrinfo(hostname, "80", &hints, &res); //uses port 80 because that is used for HTTP
-
-    for (struct addrinfo* ptr = res; ptr != nullptr; ptr = ptr->ai_next) {
-
-       int socketfd = socket(ptr->ai_family, ptr->ai_socktype, ptr->ai_protocol); //creates the socket endpoint with requirements given by addrinfo of domain
-
-       char buffer[1024]; 
-       if (connect(socketfd, ptr->ai_addr, ptr->ai_addrlen) == 0) {
-            std::cout << "connection success" << std::endl;
-
-            ssize_t sendbytes = send(socketfd, request, strlen(request), 0);
-            
-            ssize_t recvbytes;
-
-            while ((recvbytes = recv(socketfd, buffer, sizeof(buffer), 0)) > 0) {
-                std::cout.write(buffer, recvbytes);
-            }
-            if (recvbytes == -1) perror("recv failed");
-        
-            close(socketfd);
-            break; //successful connection that can be used
-       }
-       std::cout << "fail";
-       close(socketfd); //didn't work so close 
-
-
+    if (status == 0){
+        std::cout << result << std::endl;
+        return 0;
     }
+    else {
+        std::cout << "failed" << std::endl;
+    }
+    return 1;
 }   
